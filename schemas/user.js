@@ -26,6 +26,13 @@ const User_Schema = new Schema({
     token: {
         type: Schema.Types.ObjectId,
         ref: "Token"
+    },
+    verified: {
+        type: Boolean,
+        default: false
+    },
+    code: {
+        type: Number
     }
 }, {
     timestamps: true

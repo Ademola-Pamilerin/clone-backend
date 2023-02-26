@@ -1,7 +1,6 @@
 const express = require("express")
 const auth_controller = require("../controller/auth")
 const JOI = require("joi")
-const validator = require("express-joi-validation").createValidator()
 const { check } = require("express-validator")
 
 
@@ -11,6 +10,10 @@ const register = JOI.object({
     password: JOI.string().pattern(new RegExp('^[a-zA-Z0-9!@#$%^&*~`]{3,30}$')).required().min(8).max(20),
     firstname: JOI.string().required().min(3).max(20),
     lastname: JOI.string().required().min(3).max(20)
+})
+
+const login = JOI.object({
+    password: JOI.string().required().min(8)
 })
 
 const route = express.Router();
@@ -33,6 +36,42 @@ route.post("/register", async (req, res, next) => {
     )
 ], auth_controller.register)
 
+route.post("/login", async (req, res, next) => {
+    try {
+        const value = await login.validateAsync(
+            { password: req.body.password }
+        )
+        return next()
+    }
+    catch (error) {
+        return next({ message: error.message, status: 500 })
+    }
+}, [
+    check("value").notEmpty().withMessage("please enter your email or username"),
+    check("password").isStrongPassword().withMessage(
+        "Password must contain a special character, a capital letter and greater than 8 characters"
+    )
+], auth_controller.login)
 
+route.post("/validate", [
+    check("value").notEmpty().withMessage("please enter email or username")
+], auth_controller.checkforvalidemail)
+
+route.post("/password", [
+    check("value").notEmpty().withMessage("please enter an email or username"),
+    check("password").notEmpty().withMessage("password is empty").isStrongPassword().withMessage(
+        "Password must contain a special character, a capital letter and greater than 8 characters"
+    ),
+    check("confirm").notEmpty().withMessage("please confirm your password")
+], auth_controller.resetPassword)
+
+route.post("/verify", [
+    check("code").notEmpty().withMessage("Please enter code sent"),
+    check("id").notEmpty().withMessage("Invalid request please try again or refresh page")
+], auth_controller.verifyAcc)
+
+route.post("request", [
+    check("id").notEmpty().withMessage("Invalid request, please login and try again")
+], auth_controller.requestVerificationMail)
 
 module.exports = route
